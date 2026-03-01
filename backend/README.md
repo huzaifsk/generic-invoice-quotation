@@ -10,6 +10,21 @@ This backend supports a full invoice-quotation lifecycle with role-based permiss
 
 Server: `http://localhost:4000`
 
+## Deploy on Vercel
+
+1. Set Vercel project root to `backend`.
+2. Add required environment variables in Vercel Project Settings:
+	- `MONGODB_URI`
+	- `MONGODB_DB_NAME`
+	- `JWT_SECRET`
+	- `JWT_EXPIRES_IN`
+	- `CORS_ORIGIN`
+3. Redeploy.
+
+Notes:
+- Vercel uses `api/index.js` as the serverless entrypoint.
+- All routes are rewritten to the Express app through `vercel.json`.
+
 ## Roles
 
 - `admin`: full access
