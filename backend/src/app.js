@@ -1,8 +1,11 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const compression = require('compression');
 const morgan = require('morgan');
 const { corsOrigins } = require('./config');
+
+const isProduction = process.env.NODE_ENV === 'production';
 
 const authRoutes = require('./routes/auth.routes');
 const usersRoutes = require('./routes/users.routes');
@@ -45,10 +48,31 @@ const corsOptions = {
   credentials: true,
 };
 
-app.use(helmet());
+// Security & compression middleware
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(compression());
 app.use(cors(corsOptions));
+
+// Body parser with limit
 app.use(express.json({ limit: '10mb' }));
-app.use(morgan('dev'));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
+// Logging (dev only)
+if (!isProduction) {
+  app.use(morgan('dev'));
+}
+
+// Cache headers for static assets
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    // API responses: no cache
+    res.set('Cache-Control', 'no-store, must-revalidate');
+  }
+  next();
+});
+
+// Connection timeout
+app.set('request timeout', 30000);
 
 app.get('/', (_req, res) => {
   res.json({ service: 'generic-invoice-quotation-backend', status: 'running' });
@@ -59,14 +83,12 @@ app.get('/health', (_req, res) => {
 });
 
 app.get('/ping', (_req, res) => {
-  const timestamp = new Date().toISOString();
-  // eslint-disable-next-line no-console
-  console.log('BACKEND_PING', { timestamp, message: 'backend running' });
+  // Ultra-fast response for health pings
+  res.set('Cache-Control', 'no-store');
   res.json({ 
     ok: true, 
-    message: 'backend running',
-    timestamp,
-    service: 'generic-invoice-quotation-backend'
+    ts: Date.now(),
+    uptime: process.uptime()
   });
 });
 

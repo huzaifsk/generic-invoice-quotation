@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAppContext } from './hooks/useAppContext';
+import { useBackendPing } from './hooks/useBackendPing';
 import ErrorBoundary from './components/ErrorBoundary';
 import LoadingScreen from './components/LoadingScreen';
 import Login from './components/Login';
@@ -29,6 +30,9 @@ import { PanelRightCloseIcon } from '@hugeicons/core-free-icons';
 const AppRouter: React.FC = () => {
     const { isAuthenticated, companyInfo, loading, currentUser } = useAppContext();
     const navigate = useNavigate();
+    
+    // Keep backend alive by pinging every 5 seconds
+    useBackendPing();
     const [isMobile, setIsMobile] = useState(() => (typeof window !== 'undefined' ? window.innerWidth < 1024 : false));
     const [sidebarOpen, setSidebarOpen] = useState(() => (typeof window !== 'undefined' ? window.innerWidth >= 1024 : true));
     const [editingDocument, setEditingDocument] = useState<Document | null>(null);

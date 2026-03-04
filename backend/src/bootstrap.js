@@ -1,9 +1,7 @@
 const { validateRequiredConfig } = require('./config');
 const { initDb } = require('./db/store');
-const cron = require('node-cron');
 
 let bootstrapPromise;
-let pingCronJob;
 
 if (!global.__processGuardsInstalled) {
   process.on('unhandledRejection', (reason) => {
@@ -37,20 +35,6 @@ function initializeBackend() {
       const dbMs = Date.now() - bootStart;
       // eslint-disable-next-line no-console
       console.log('BOOT_PHASE_END DB_INITIALIZATION', { totalBootMs: dbMs });
-
-      // Start cron job to log backend health every 7 seconds
-      if (!pingCronJob) {
-        // eslint-disable-next-line no-console
-        console.log('CRON_STARTING PING_HEALTH_CHECK every 7 seconds');
-        pingCronJob = cron.schedule('*/7 * * * * *', () => {
-          // eslint-disable-next-line no-console
-          console.log('CRON_PING', {
-            timestamp: new Date().toISOString(),
-            message: 'backend running',
-            uptime: process.uptime(),
-          });
-        });
-      }
     })().catch((error) => {
       bootstrapPromise = null;
       // eslint-disable-next-line no-console
