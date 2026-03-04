@@ -58,35 +58,22 @@ module.exports = async function handler(req, res) {
     });
 
     // Route request through Express app
-    return new Promise((resolve, reject) => {
-      app(req, res);
-      // Ensure response is sent
-      const timeout = setTimeout(() => {
-        if (!res.headersSent) {
-          // eslint-disable-next-line no-console
-          console.error('REQUEST_TIMEOUT', {
-            reqId,
-            path: req.url,
-            durationMs: Date.now() - reqStartMs,
-          });
-          res.status(504).json({ message: 'Request timeout' });
-        }
-      }, 29000); // Vercel timeout is 30s
+    // Wrap response.end to track completion
+    const originalEnd = res.end;
+    res.end = function (...args) {
+      // eslint-disable-next-line no-console
+      console.log('REQUEST_OUT', {
+        reqId,
+        path: req.url,
+        statusCode: res.statusCode,
+        durationMs: Date.now() - reqStartMs,
+        timestamp: new Date().toISOString(),
+      });
+      return originalEnd.apply(res, args);
+    };
 
-      const originalSend = res.send;
-      res.send = function (...args) {
-        clearTimeout(timeout);
-        // eslint-disable-next-line no-console
-        console.log('REQUEST_OUT', {
-          reqId,
-          path: req.url,
-          statusCode: res.statusCode,
-          durationMs: Date.now() - reqStartMs,
-          timestamp: new Date().toISOString(),
-        });
-        return originalSend.apply(res, args);
-      };
-    });
+    // Invoke Express app - it will handle the request/response cycle
+    app(req, res);
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('HANDLER_ERROR', {
