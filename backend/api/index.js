@@ -42,28 +42,6 @@ module.exports = async function handler(req, res) {
   });
 
   try {
-    // Root diagnostics endpoint - always available
-    if (req.url === '/' || req.url === '/diagnose') {
-      // eslint-disable-next-line no-console
-      console.log('DIAGNOSTICS_REQUEST', {
-        reqId,
-        timestamp: ts,
-        bootSuccess,
-        bootError: bootError ? bootError.message : null,
-        loadError: loadError ? loadError.message : null,
-      });
-      
-      return res.status(200).json({
-        service: 'generic-invoice-quotation-backend',
-        status: loadError ? 'module_error' : bootSuccess ? 'running' : bootError ? 'failed' : 'initializing',
-        timestamp: ts,
-        reqId,
-        bootTime: bootStartTime ? Date.now() - bootStartTime : null,
-        bootError: bootError ? { message: bootError.message } : null,
-        loadError: loadError ? { message: loadError.message } : null,
-      });
-    }
-
     // Fail fast if module load failed
     if (loadError) {
       // eslint-disable-next-line no-console
@@ -71,7 +49,7 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({ message: 'Backend module failed to load', reqId });
     }
 
-    // Initialize backend once per container lifetime
+    // Initialize backend once per container lifetime (even for diagnostics)
     if (!bootStartTime) {
       bootStartTime = Date.now();
       // eslint-disable-next-line no-console
@@ -93,14 +71,35 @@ module.exports = async function handler(req, res) {
           code: initError.code,
           stack: initError.stack,
         });
-        throw initError;
       }
+    }
+
+    // Root diagnostics endpoint - always available after boot attempt
+    if (req.url === '/' || req.url === '/diagnose') {
+      // eslint-disable-next-line no-console
+      console.log('DIAGNOSTICS_REQUEST', {
+        reqId,
+        timestamp: ts,
+        bootSuccess,
+        bootError: bootError ? bootError.message : null,
+        loadError: loadError ? loadError.message : null,
+      });
+      
+      return res.status(200).json({
+        service: 'generic-invoice-quotation-backend',
+        status: loadError ? 'module_error' : bootSuccess ? 'running' : bootError ? 'failed' : 'initializing',
+        timestamp: ts,
+        reqId,
+        bootTime: bootStartTime ? Date.now() - bootStartTime : null,
+        bootError: bootError ? { message: bootError.message } : null,
+        loadError: loadError ? { message: loadError.message } : null,
+      });
     }
 
     if (bootError) {
       // eslint-disable-next-line no-console
       console.error('HANDLER_BLOCKED_BOOT_ERROR', { reqId, error: bootError.message });
-      throw bootError;
+      return res.status(503).json({ message: 'Backend failed to initialize', reqId });
     }
 
     // eslint-disable-next-line no-console
