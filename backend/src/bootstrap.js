@@ -21,18 +21,30 @@ function initializeBackend() {
   if (!bootstrapPromise) {
     bootstrapPromise = (async () => {
       const bootStart = Date.now();
+      const startTime = new Date().toISOString();
       // eslint-disable-next-line no-console
-      console.log('BOOT_START');
+      console.log('BOOT_PHASE_START CONFIG_VALIDATION', { timestamp: startTime });
       validateRequiredConfig();
+      const configMs = Date.now() - bootStart;
       // eslint-disable-next-line no-console
-      console.log('ENV_VALIDATED', { bootMs: Date.now() - bootStart });
+      console.log('BOOT_PHASE_END CONFIG_VALIDATION', { durationMs: configMs });
+
+      // eslint-disable-next-line no-console
+      console.log('BOOT_PHASE_START DB_INITIALIZATION', { timestamp: new Date().toISOString() });
       await initDb();
+      const dbMs = Date.now() - bootStart;
       // eslint-disable-next-line no-console
-      console.log('DB_INITIALIZED', { bootMs: Date.now() - bootStart });
+      console.log('BOOT_PHASE_END DB_INITIALIZATION', { totalBootMs: dbMs });
     })().catch((error) => {
       bootstrapPromise = null;
       // eslint-disable-next-line no-console
-      console.error('BOOT_FAILED', { message: error.message, stack: error.stack });
+      console.error('BOOT_FAILED_ERROR', {
+        message: error.message,
+        code: error.code,
+        statusCode: error.statusCode,
+        stack: error.stack,
+        timestamp: new Date().toISOString(),
+      });
       throw error;
     });
   }
