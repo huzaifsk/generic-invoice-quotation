@@ -1,10 +1,10 @@
 const app = require('./app');
 const { port } = require('./config');
-const { initDb } = require('./db/store');
+const { initializeBackend } = require('./bootstrap');
 
 async function start() {
   try {
-    await initDb();
+    await initializeBackend();
     app.listen(port, () => {
       // eslint-disable-next-line no-console
       console.log(`Backend running on http://localhost:${port}`);

@@ -1,25 +1,15 @@
 const app = require('../src/app');
-const { initDb } = require('../src/db/store');
-
-let initPromise;
-
-function ensureDbReady() {
-  if (!initPromise) {
-    initPromise = initDb().catch((error) => {
-      initPromise = null;
-      throw error;
-    });
-  }
-  return initPromise;
-}
+const { initializeBackend } = require('../src/bootstrap');
 
 module.exports = async function handler(req, res) {
   try {
-    await ensureDbReady();
+    await initializeBackend();
     return app(req, res);
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('Serverless startup failed:', error);
-    return res.status(500).json({ message: 'Server initialization failed.' });
+    const statusCode = Number(error.statusCode || 500);
+    const message = statusCode >= 500 ? 'Server initialization failed.' : error.message;
+    return res.status(statusCode).json({ message });
   }
 };

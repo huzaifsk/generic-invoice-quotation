@@ -13,17 +13,20 @@ Server: `http://localhost:4000`
 ## Deploy on Vercel
 
 1. Set Vercel project root to `backend`.
+2. Keep framework preset as `Other`.
 2. Add required environment variables in Vercel Project Settings:
 	- `MONGODB_URI`
 	- `MONGODB_DB_NAME`
 	- `JWT_SECRET`
 	- `JWT_EXPIRES_IN`
 	- `CORS_ORIGIN`
-3. Redeploy.
+3. Redeploy after every env change.
 
 Notes:
 - Vercel uses `api/index.js` as the serverless entrypoint.
 - All routes are rewritten to the Express app through `vercel.json`.
+- Local-only `backend/.env` is not used by Vercel; configure env values in Vercel dashboard.
+- If deployment succeeds but runtime fails, check Vercel Function Logs for missing/invalid env values.
 
 ## Roles
 
@@ -63,7 +66,7 @@ Notes:
 
 ## Data Store
 
-Current implementation uses MongoDB (`app_state` collection, singleton document model) with write queueing for consistency.
+Current implementation uses MongoDB through mongoose models (users, companies, clients, documents, payments, credit notes, quote versions, activities, notifications, sequences) with queued writes for consistency.
 
 Environment:
 - `MONGODB_URI` (default: `mongodb://localhost:27017`)

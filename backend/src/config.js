@@ -13,8 +13,12 @@ function parseCorsOrigins(value) {
 const corsOrigins = parseCorsOrigins(process.env.CORS_ORIGIN || 'http://localhost:5173');
 const mongoUri = String(process.env.MONGODB_URI || '').trim();
 
-if (!mongoUri) {
-  throw new Error('MONGODB_URI is required. Please set it in backend/.env');
+function validateRequiredConfig() {
+  if (!mongoUri) {
+    const error = new Error('MONGODB_URI is required. Please set it in environment variables.');
+    error.statusCode = 500;
+    throw error;
+  }
 }
 
 module.exports = {
@@ -25,4 +29,5 @@ module.exports = {
   mongoUri,
   mongoDbName: process.env.MONGODB_DB_NAME || 'generic_invoice_quotation',
   dbFile: path.join(__dirname, '..', '..', 'data', 'db.json'),
+  validateRequiredConfig,
 };
