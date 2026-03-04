@@ -1,25 +1,36 @@
 const mongoose = require('mongoose');
 const { mongoUri, mongoDbName } = require('../config');
 
-let isConnected = false;
-
 async function connectToMongo() {
-  if (isConnected) return mongoose.connection;
+  const readyState = mongoose.connection.readyState;
+  if (readyState === 1) return mongoose.connection;
 
-  await mongoose.connect(mongoUri, {
-    dbName: mongoDbName,
-    serverSelectionTimeoutMS: 10000,
-    maxPoolSize: 10,
-  });
-
-  isConnected = true;
-  return mongoose.connection;
+  try {
+    // eslint-disable-next-line no-console
+    console.log('MONGO_CONNECTING', { readyState });
+    await mongoose.connect(mongoUri, {
+      dbName: mongoDbName,
+      serverSelectionTimeoutMS: 8000,
+      maxPoolSize: 5,
+      retryWrites: true,
+    });
+    // eslint-disable-next-line no-console
+    console.log('MONGO_CONNECTED', { dbName: mongoDbName });
+    return mongoose.connection;
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('MONGO_CONNECT_FAILED', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack,
+    });
+    throw error;
+  }
 }
 
 async function disconnectMongo() {
-  if (!isConnected) return;
+  if (mongoose.connection.readyState !== 1) return;
   await mongoose.disconnect();
-  isConnected = false;
 }
 
 module.exports = {

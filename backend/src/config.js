@@ -13,9 +13,25 @@ function parseCorsOrigins(value) {
 const corsOrigins = parseCorsOrigins(process.env.CORS_ORIGIN || 'http://localhost:5173');
 const mongoUri = String(process.env.MONGODB_URI || '').trim();
 
+function required(envName) {
+  const value = String(process.env[envName] || '').trim();
+  if (!value) {
+    const error = new Error(`${envName} is required. Please set it in environment variables.`);
+    error.statusCode = 500;
+    throw error;
+  }
+  return value;
+}
+
 function validateRequiredConfig() {
-  if (!mongoUri) {
-    const error = new Error('MONGODB_URI is required. Please set it in environment variables.');
+  try {
+    required('MONGODB_URI');
+    required('JWT_SECRET');
+    const port = Number(process.env.PORT || 4000);
+    if (port < 1 || port > 65535) throw new Error('PORT must be 1-65535');
+    // eslint-disable-next-line no-console
+    console.log('CONFIG_VALIDATED', { mongoHost: mongoUri.match(/@([^/]+)/)?.[1] || 'unknown', dbName: process.env.MONGODB_DB_NAME });
+  } catch (error) {
     error.statusCode = 500;
     throw error;
   }

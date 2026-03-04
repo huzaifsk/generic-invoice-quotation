@@ -18,6 +18,9 @@ const reportsRoutes = require('./routes/reports.routes');
 
 const app = express();
 
+const asyncRoute = (fn) => (req, res, next) =>
+  Promise.resolve(fn(req, res, next)).catch(next);
+
 function isAllowedDevOrigin(origin) {
   try {
     const parsed = new URL(origin);
@@ -63,12 +66,19 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/activities', activitiesRoutes);
 app.use('/api/reports', reportsRoutes);
 
-app.use((err, _req, res, _next) => {
+app.use((err, req, res, _next) => {
   // eslint-disable-next-line no-console
-  console.error(err);
+  console.error('REQUEST_ERROR', {
+    message: err.message,
+    path: req.url,
+    method: req.method,
+    statusCode: err.statusCode || 500,
+    stack: err.stack,
+  });
   const statusCode = Number(err.statusCode || 500);
   const message = statusCode >= 500 ? 'Internal server error.' : err.message;
   res.status(statusCode).json({ message });
 });
 
 module.exports = app;
+module.exports.asyncRoute = asyncRoute;
