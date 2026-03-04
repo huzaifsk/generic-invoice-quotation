@@ -58,6 +58,18 @@ app.get('/health', (_req, res) => {
   res.json({ ok: true, service: 'generic-invoice-quotation-backend' });
 });
 
+app.get('/ping', (_req, res) => {
+  const timestamp = new Date().toISOString();
+  // eslint-disable-next-line no-console
+  console.log('BACKEND_PING', { timestamp, message: 'backend running' });
+  res.json({ 
+    ok: true, 
+    message: 'backend running',
+    timestamp,
+    service: 'generic-invoice-quotation-backend'
+  });
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/company', companyRoutes);
